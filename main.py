@@ -40,6 +40,21 @@ def train(train_data, epoch):
             break
 
 
+def evaluate(data_source):
+    # Turn on evaluation mode which disables dropout.
+    model.eval()
+    total_loss = 0.
+    hidden = model.init_hidden(eval_batch_size)
+    with torch.no_grad():
+        for i in range(0, data_source.size(0) - 1, args.seq_len):
+            data, targets = get_batch(data_source, i)
+            output, hidden = model(data, hidden)
+            hidden = repackage_hidden(hidden)
+            total_loss += len(data) * criterion(output, targets).item()
+        get_spearman_cor(args.ws_txt, model, corpus.dictionary.word2idx, args.cuda)
+    return total_loss / (len(data_source) - 1)
+
+
 if __name__ == '__main__':
 
     # 训练集，验证集，测试集

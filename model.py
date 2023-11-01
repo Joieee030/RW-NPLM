@@ -24,15 +24,9 @@ class RNNModel(nn.Module):
             self.rnn = nn.RNN(embedding_dim, hidden_dim, num_of_layers, nonlinearity=nonlinearity, dropout=dropout)
         self.decoder = nn.Linear(hidden_dim, vocab_size)
 
-        # Optionally tie weights as in:
-        # "Using the Output Embedding to Improve Language Models" (Press & Wolf 2016)
-        # https://arxiv.org/abs/1608.05859
-        # and
-        # "Tying Word Vectors and Word Classifiers: A Loss Framework for Language Modeling" (Inan et al. 2016)
-        # https://arxiv.org/abs/1611.01462
         if tie_weights:
             if hidden_dim != embedding_dim:
-                raise ValueError('When using the tied flag, hidden_dim must be equal to emsize')
+                raise ValueError('When using the tied flag, hidden_dim must be equal to embedding_size')
             self.decoder.weight = self.encoder.weight
 
         self.init_weights()

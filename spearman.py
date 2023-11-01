@@ -1,7 +1,6 @@
-'''
-Calculate Spearman Correlation 
-'''
-
+"""
+计算 Spearman 相关性
+"""
 
 import torch
 import numpy as np
@@ -9,11 +8,11 @@ from scipy.stats import spearmanr
 
 
 def txt2list(txt_path):
-    '''
-    Read a txt file and return a list
-    Arguments:
-        txt_path (str): path to save the text file
-    '''
+    """
+    读取 txt 文件并返回列表
+    参数：
+        txt_path(str)：保存文本文件的路径
+    """
     output = []
     f = open(txt_path, 'r')
     for line in f.readlines():
@@ -40,7 +39,3 @@ def get_spearman_cor(ws_txt, model, word2idx, cuda=False):
         pred_sims.append(pred_sim)
     sc = spearmanr(human_sims, pred_sims)
     print('Spearman Correlation: {}'.format(sc))
-
-
-if __name__ == '__main__':
-    txt2list('./data/wordsim353_sim_rel/wordsim_similarity_goldstandard.txt')

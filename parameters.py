@@ -3,7 +3,7 @@ import torch
 import data
 
 parser = argparse.ArgumentParser(description='PyTorch Wikitext-2 RNN/LSTM/GRU/Transformer Language Model')
-parser.add_argument('--data', type=str, default='./data/wikitext-2', help='location of the data corpus')
+parser.add_argument('--data', type=str, default='./data/sentence', help='location of the data corpus')
 parser.add_argument('--model', type=str, default='LSTM',
                     help='type of network (RNN_TANH, RNN_RELU, LSTM, GRU, Transformer, FNN)')
 parser.add_argument('--embedding_dim', type=int, default=200, help='size of word embeddings')
@@ -21,8 +21,6 @@ parser.add_argument('--cuda', action='store_true', help='use CUDA')
 parser.add_argument('--log-interval', type=int, default=200, metavar='N', help='report interval')
 parser.add_argument('--save', type=str, default='model.pt', help='path to save the final model')
 parser.add_argument('--onnx-export', type=str, default='', help='path to export the final model in onnx format')
-parser.add_argument('--ws_txt', type=str, default='./data/wordsim353_sim_rel/wordsim_similarity_goldstandard.txt',
-                    help='Word similarity text file')
 parser.add_argument('--nhead', type=int, default=2,
                     help='the number of heads in the encoder/decoder of the transformer model')
 parser.add_argument('--dry-run', action='store_true', help='verify the code and the model')
