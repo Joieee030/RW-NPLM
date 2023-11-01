@@ -36,7 +36,7 @@ parser.add_argument('--bptt', type=int, default=35,
                     help='sequence length')
 args = parser.parse_args()
 
-# Set the random seed manually for reproducibility.
+# 手动设置随机种子以确保可重复性。
 torch.manual_seed(args.seed)
 if torch.cuda.is_available():
     if not args.cuda:
@@ -49,43 +49,39 @@ if args.temperature < 1e-3:
 
 with open(args.checkpoint, 'rb') as f:
     model = torch.load(f).to(device)
-model.eval()
 
 corpus = data.Corpus(args.data)
-ntokens = len(corpus.dictionary)
+# n_tokens = len(corpus.dictionary)
 
-is_transformer_model = hasattr(model, 'model_type') and model.model_type == 'Transformer'
-is_fnn_model = args.model == 'FNN'
-is_not_rnn_model = is_fnn_model or is_transformer_model
-if not is_not_rnn_model:
-    hidden = model.init_hidden(1)
+# 初始化隐藏层
+hidden = model.init_hidden(1)
 
 """这里的input改成自己想要生成的"""
-input = torch.randint(ntokens, (1, 1), dtype=torch.long).to(device)
+# input = torch.randint(n_tokens, (1, 1), dtype=torch.long).to(device)
+paper_name = "paper_1"
+paper_index = torch.tensor(corpus.dictionary.word2idx[paper_name]).view(1, 1)
 
-with open(args.outf, 'w') as outf:
-    with torch.no_grad():  # no tracking history
+with open(args.outf, 'w') as output_file:
+    # 无需计算梯度
+    with torch.no_grad():
+        # 对于每个word
         for i in range(args.words):
-            if is_not_rnn_model:
-                if is_transformer_model:
-                    output = model(input, False)
-                else:
-                    if input.shape[0] > args.bptt:
-                        input = input[-args.bptt:]
-                    output = model(input)
-                word_weights = output[-1].squeeze().div(args.temperature).exp().cpu()
-                word_idx = torch.multinomial(word_weights, 1)[0]
-                word_tensor = torch.Tensor([[word_idx]]).long().to(device)
-                input = torch.cat([input, word_tensor], 0)
-            else:
-                output, hidden = model(input, hidden)
-                word_weights = output.squeeze().div(args.temperature).exp().cpu()
-                word_idx = torch.multinomial(word_weights, 1)[0]
-                input.fill_(word_idx)
+            # 输入paper_index和hidden状态，生成输出output和新的hidden状态
+            output, hidden = model(paper_index, hidden)
+            # 将output的维度减小到一维，并将张量转移到CPU上
+            word_weights = output.squeeze().div(args.temperature).exp().cpu()
 
+            # 从word_weights中使用多元采样方法选择一个word_idx
+            word_idx = torch.multinomial(word_weights, 1)[0]
+            # 将paper_index的每个元素设置为所选的word_idx
+            paper_index.fill_(word_idx)
+
+            # 将word_idx转换为对应的word
             word = corpus.dictionary.idx2word[word_idx]
 
-            outf.write(word + ('\n' if i % 20 == 19 else ' '))
+            # 将生成的word写入output_file（换行符每19个word使用一次）
+            output_file.write(word + ('\n' if i % 20 == 19 else ' '))
 
+            # 每经过args.log_interval个iteration，打印生成的word数量
             if i % args.log_interval == 0:
-                print('| Generated {}/{} words'.format(i, args.words))
+                print('| 生成了 {} 个word'.format(i, args.words))
