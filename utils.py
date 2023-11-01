@@ -52,26 +52,3 @@ def get_batch(source, i):
     data = source[i:i + seq_len]
     target = source[i + 1:i + 1 + seq_len].view(-1)
     return data, target
-
-
-def evaluate(data_source):
-    # 模型评估.
-    model.eval()
-    total_loss = 0.
-    vocab_size = len(corpus.dictionary)
-    if args.model == 'FNN':
-        vocab_size = vocab_size + 1
-    if args.model not in ['Transformer', 'FNN']:
-        hidden = model.init_hidden(eval_batch_size)
-    with torch.no_grad():
-        for i in range(0, data_source.size(0) - 1, args.seq_len):
-            data, targets = get_batch(data_source, i)
-            if args.model in ['Transformer', 'FNN']:
-                output = model(data)
-                output = output.view(-1, vocab_size)
-            else:
-                output, hidden = model(data, hidden)
-                hidden = repackage_hidden(hidden)
-            total_loss += len(data) * criterion(output, targets).item()
-        get_spearman_cor(args.ws_txt, model, corpus.dictionary.word2idx, args.cuda)
-    return total_loss / (len(data_source) - 1)
