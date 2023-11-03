@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 
 class RNNModel(nn.Module):
-    """Container module with an encoder, a recurrent module, and a decoder."""
+    """带有编码器、循环模块和解码器的容器模块"""
 
     def __init__(self, rnn_type, vocab_size, embedding_dim, hidden_dim, num_of_layers, dropout=0.5, tie_weights=False):
         super(RNNModel, self).__init__()
@@ -30,7 +30,6 @@ class RNNModel(nn.Module):
             self.decoder.weight = self.encoder.weight
 
         self.init_weights()
-
         self.rnn_type = rnn_type
         self.hidden_dim = hidden_dim
         self.num_of_layers = num_of_layers
@@ -68,7 +67,7 @@ class RNNModel(nn.Module):
 
     def get_word_sim(self, w1, w2):
         """
-        Return the cosine similarity between w1 and w2
+        返回 w1 和 w2 之间的余弦相似度
         """
         e1 = self.encoder(w1)
         e2 = self.encoder(w2)

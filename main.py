@@ -1,6 +1,7 @@
 # coding: utf-8
 import time
-import math
+import model
+import data2corpus
 import torch.nn as nn
 from utils import *
 
@@ -51,18 +52,25 @@ def evaluate(data_source):
             output, hidden = model(data, hidden)
             hidden = repackage_hidden(hidden)
             total_loss += len(data) * criterion(output, targets).item()
-        get_spearman_cor(args.ws_txt, model, corpus.dictionary.word2idx, args.cuda)
     return total_loss / (len(data_source) - 1)
 
 
 if __name__ == '__main__':
 
+    # 加载语料库数据
+    corpus = data2corpus.Corpus(args.data)
+    # 评估时每批大小
+    eval_batch_size = 10
     # 训练集，验证集，测试集
     train_data = batchify(corpus.train, args.batch_size)
     val_data = batchify(corpus.valid, eval_batch_size)
     test_data = batchify(corpus.test, eval_batch_size)
 
+    print(corpus.dictionary.word2idx)
+
     # 搭建模型
+    # 语料库大小
+    vocab_size = len(corpus.dictionary)
     print("Vocabulary size: {}".format(vocab_size))
     print("Project will run at: {}".format(device))
     model = model.RNNModel(

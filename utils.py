@@ -1,5 +1,4 @@
-import model
-from spearman import get_spearman_cor
+import math
 from parameters import *
 
 
@@ -14,22 +13,20 @@ def batchify(data, batch_size):
     │ d j p v │
     │ e k q w │
     └ f l r x ┘.
-    模型会把这些列视为独立的，这意味着不能学习如“g”对“f”的依赖性，但允许更有效
+    模型会把这些列视为独立的，这意味着不能学习如“g”对“f”的依赖性
     """
-    # 将数据集划分为bsz部分
-    device = torch.device("cpu")
-    nbatch = data.size(0) // batch_size
+    device = torch.device("cpu")  # 创建一个CPU的设备对象
+    nbatch = data.size(0) // batch_size  # 计算总批次数
     # 剔除多余的余数个元素
-    data = data.narrow(0, 0, nbatch * batch_size)
+    data = data.narrow(0, 0, nbatch * batch_size)  # 窄化数据，去掉多余的元素
     # 在batch_size批次中平均划分数据
-    data = data.view(batch_size, -1).t().contiguous()
-    return data.to(device)
+    data = data.view(batch_size, -1).t().contiguous()  # 将数据reshape为batch_size批次，并转置和连续化
+    return data.to(device)  # 将数据移动到指定的设备上
 
 
 ###############################################################################
 # Training code
 ###############################################################################
-
 def repackage_hidden(h):
     """打包隐藏的状态，将它们从过去训练中分离出来。"""
 
@@ -52,3 +49,23 @@ def get_batch(source, i):
     data = source[i:i + seq_len]
     target = source[i + 1:i + 1 + seq_len].view(-1)
     return data, target
+
+
+def cosine_similarity(list1, list2):
+    # 计算分子（向量点积）
+    dot_product = 0
+    for i in range(len(list1)):
+        dot_product += list1[i] * list2[i]
+
+    # 计算分母（向量模长乘积）
+    norm_list1 = 0
+    norm_list2 = 0
+    for i in range(len(list1)):
+        norm_list1 += math.pow(list1[i], 2)
+        norm_list2 += math.pow(list2[i], 2)
+    norm_list1 = math.sqrt(norm_list1)
+    norm_list2 = math.sqrt(norm_list2)
+
+    # 计算余弦相似度
+    similarity = dot_product / (norm_list1 * norm_list2)
+    return similarity

@@ -1,46 +1,65 @@
-import torch
+import random
 import pandas as pd
 import numpy as np
-from torch_cluster import random_walk
-
-
-def excel2table(excel_path):
-    df = pd.read_excel(excel_path)
-    return df
+from parameters import args
 
 
 class MyWalker(object):
 
-    def walker(self, node_path, edge_path, walk_length, epoch, filename):
-        row = []
-        col = []
-        walks = []
-        node_table = excel2table(node_path)
-        edge_table = excel2table(edge_path)
-        for item in node_table.iloc[:, 0]:
-            for node in edge_table.iloc[:, 1]:
-                if item == node:
-                    row.append(node)
-            for i in range(len(edge_table)):
-                if item == edge_table.iloc[i, 0]:
-                    col.append(edge_table.iloc[i, 1])
-        row = torch.tensor(row)
-        col = torch.tensor(col)
-        start_nodes = torch.tensor(
-            [node_table.iloc[i, 0] for i in range(node_table.shape[0]) if node_table.iloc[i, 1] == "paper"])
+    def walker(self, walk_length, epoch, filename):
+        df_edge = pd.DataFrame(pd.read_excel(args.edge_path))
+        df_node = pd.DataFrame(pd.read_excel(args.node_path))
+        start_nodes = [i for i in range(df_node.shape[0]) if df_node.iloc[i]["类型"] == "paper"]
+        seqs = []
 
         for _ in range(epoch):
-            walks.append(random_walk(row, col, start_nodes, walk_length=walk_length))
+            seqs.append(self.random_walk(df_edge, start_nodes, walk_length=walk_length))
+        seqs = np.vstack(seqs)
+        np.savetxt(filename, seqs, delimiter=' ', fmt='%d', newline=' ')
 
-        combined = np.vstack(walks)
-        np.savetxt(filename, combined, delimiter=',', fmt='%d')
+    # 定义游走规则
+    @staticmethod
+    def random_walk(df, start_points, walk_length):
+        # 参数：
+        # df: 数据，包含点1和点2的列
+        # start_points: 起始点列表
+        # walk_length: 游走的长度
+        # 返回值：游走序列列表
+
+        for start_point in start_points:
+            walk_sequence = [start_point]
+            current_point = start_point
+            step = 0
+
+            while step < walk_length:
+                # 从数据框中筛选与当前点相关的行
+                filtered_df = df[df['点1'] == current_point]
+
+                if len(filtered_df) == 0:
+                    break
+
+                # 随机选择下一个点
+                next_index = random.randint(0, len(filtered_df) - 1)
+                next_point = filtered_df.iloc[next_index]['点2']
+
+                # 添加到游走序列中
+                walk_sequence.append(next_point)
+                current_point = next_point
+                step += 1
+
+            return walk_sequence
+
 
 # test
-# if __name__ == '__main__':
-#     walker = MyWalker()
-#     walker.walker(
-#         node_path='./data/node_attr.xlsx',
-#         edge_path='./data/relation.xlsx',
-#         walk_length=5,
-#         epoch=3,
-#         filename='./data/walks.txt')
+if __name__ == '__main__':
+    walker = MyWalker()
+    walker.walker(walk_length=100,
+                  epoch=100,
+                  filename='./data/sentence/test.txt')
+    walker.walker(walk_length=100,
+                  epoch=1000,
+                  filename='./data/sentence/train.txt')
+    walker.walker(walk_length=100,
+                  epoch=100,
+                  filename='./data/sentence/valid.txt')
+    print("Done!")
